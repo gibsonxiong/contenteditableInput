@@ -7,4 +7,5 @@
 
 ### 截图
 
-![截图](https://gibsonxiong.github.io/contenteditableInput/img/snapshot.png)
+<img width="500" src="https://gibsonxiong.github.io/contenteditableInput/img/snapshot.png"/>
+
