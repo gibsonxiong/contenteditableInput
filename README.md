@@ -9,3 +9,5 @@
 
 <img width="500" src="https://gibsonxiong.github.io/contenteditableInput/img/snapshot.png"/>
 
+参考链接：[https://segmentfault.com/a/1190000005869372](https://segmentfault.com/a/1190000005869372)
+
