@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        #contentWrap {
+            width: 400px;
+            border: 1px solid #ccc;
+            height: 100px;
+            margin-bottom: 20px;
+            overflow: auto;
+        }
+
+        #contentWrap img {
+
+            vertical-align: bottom;
+        }
+
+        #input {
+            display: inline-block;
+            width: 300px;
+            border: 1px solid #ccc;
+            padding: 2px;
+            margin-bottom: 10px;
+            word-break: break-all;
+            min-height: 30px;
+            font-size: 16px;
+        }
+
+        #input img {
+
+            vertical-align: bottom;
+        }
+
+        #submit {
+            border: 1px solid #eee;
+            height: 32px;
+            line-height: 32px;
+            padding: 0px 10px;
+            background: #1a7de6;
+            border-radius: 4px;
+            color: #fff;
+            vertical-align: top;
+        }
+
+        #faceWrap {
+            padding: 2px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+
+        #faceWrap:after {
+            content: "";
+            display: block;
+            clear: both;
+        }
+
+        #faceWrap>div {
+            text-align: center;
+            float: left;
+            width: 5%;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>聊天内容</h2>
+    <div id="contentWrap"></div>
+    <div id="input" contenteditable="true"></div>
+    <button id="submit">发送</button>
+    <div id="faceWrap"></div>
+
+    <script>
+        //渲染表情图片
+        (function () {
+            var faceWrap = document.getElementById('faceWrap');
+            var html = '';
+
+
+            for (var i = 100; i <= 219; i++) {
+                var suffix = i < 200 ? '.gif' : '.png';
+                html += '<div><img src="./img/wechat/' + i + suffix + '"></div>';
+            }
+
+            faceWrap.innerHTML = html;
+
+        })();
+
+        // 定义最后光标对象
+        var lastEditRange;
+
+
+        // 编辑框点击事件
+        document.getElementById('input').onclick = function () {
+            // 获取选定对象
+            var selection = getSelection()
+            // 设置最后光标对象
+            lastEditRange = selection.getRangeAt(0)
+        }
+
+        // 编辑框按键弹起事件
+        document.getElementById('input').onkeyup = function () {
+            // 获取选定对象
+            var selection = getSelection()
+            // 设置最后光标对象
+            lastEditRange = selection.getRangeAt(0)
+        }
+
+        // 表情点击事件
+        document.getElementById('faceWrap').onclick = function (e) {
+            if (e.target.tagName.toUpperCase() !== 'IMG') return;
+
+            var src = e.target.src;
+
+            insertImg(src);
+        };
+
+        //发送
+        document.getElementById('submit').onclick = function (e) {
+            var input = document.getElementById('input');
+            var text = input.innerHTML;
+
+
+            document.getElementById('contentWrap').innerHTML += text + '<br/>';
+
+            input.innerHTML = '';
+        };
+
+        function insertImg(src) {
+            // 获取编辑框对象
+            var input = document.getElementById('input');
+            //表情图片
+            var img = new Image();
+            img.src = src;
+
+            // 编辑框设置焦点
+            input.focus();
+            // 获取选定对象
+            var selection = getSelection();
+            // 判断是否有最后光标对象存在
+            if (lastEditRange) {
+                // 存在最后光标对象，选定对象清除所有光标并添加最后光标还原之前的状态
+                selection.removeAllRanges()
+                selection.addRange(lastEditRange)
+            }
+
+            // 判断选定对象范围是编辑框还是文本节点
+            if (selection.anchorNode.nodeName != '#text') {
+                var childNodes = input.childNodes;
+                var anchorOffset = selection.anchorOffset;
+                var extentOffset = selection.extentOffset;
+
+                //移除选中部分
+                for (var i = anchorOffset; i < extentOffset; i++) {
+                    input.removeChild(childNodes[i]);
+                    i--;
+                    extentOffset--;
+                }
+
+                // 如果文本框的子元素大于0，则表示有其他元素，则按照位置插入表情节点
+                if (input.childNodes.length > 0 && childNodes.length > anchorOffset) {
+
+                    for (var i = 0; i < childNodes.length; i++) {
+                        if (i == anchorOffset) {
+                            input.insertBefore(img, childNodes[i]);
+                            break;
+                        }
+
+                    }
+                } else {
+                    // 否则直接插入一个表情元素
+                    input.appendChild(img);
+                }
+                // 创建新的光标对象
+                var range = document.createRange()
+                // 光标对象的范围界定为新建的表情节点
+                range.selectNodeContents(input)
+                // 光标位置定位在表情节点的最大长度
+                range.setStart(input, anchorOffset + 1);
+                // 使光标开始和光标结束重叠
+                range.collapse(true)
+                // 清除选定对象的所有光标对象
+                selection.removeAllRanges()
+                // 插入新的光标对象
+                selection.addRange(range)
+            } else {
+                // 如果是文本节点则先获取光标对象
+                var range = selection.getRangeAt(0)
+                // 获取光标对象的范围界定对象，一般就是textNode对象
+                var textNode = range.startContainer;
+                // 获取光标位置
+                var rangeStartOffset = range.startOffset;
+                //删除选择内容
+                textNode.deleteData(range.startOffset, range.endOffset - range.startOffset);
+                //分割文本节点
+                var textNodeSplited = textNode.splitText(range.startOffset);
+                //插入图片
+                textNodeSplited.parentElement.insertBefore(img, textNodeSplited);
+
+                // 光标移动到到原来的位置加上新内容的长度
+                range.setStart(textNodeSplited, 0)
+                // 光标开始和光标结束重叠
+                range.collapse(true)
+                // 清除选定对象的所有光标对象
+                selection.removeAllRanges()
+                // 插入新的光标对象
+                selection.addRange(range)
+            }
+            // 无论如何都要记录最后光标对象
+            lastEditRange = selection.getRangeAt(0);
+        }
+    </script>
+</body>
+
+</html>
